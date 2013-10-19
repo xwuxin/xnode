@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<HEAD>
+		<meta charset='utf-8'>
+		<title>聊天测试</title>
+		<style>
+
+			#send-message {display:none;float:left;margin-left:100px;width:200px;}
+			#nicknames {width:300px;float:right;margin-right:100px;}
+			#message {width: 300px; height:100px;}
+			#messages{clear:both;text-align:center;margin:0 none}
+
+
+
+		</style>
+	</HEAD>
+
+	<body>
+		<h1>聊天测试 </h1>
+		<form id="set-nickname" style="text-align:center; margin:0 none;">
+			<label for="nickname">昵称:</label>
+			<input type="text" id="nickname" />
+			<input type='submit'  value='设置'/>
+		</form>
+
+		<form id="send-message">
+			<textarea id="message"></textarea>
+
+			<input type="submit" value='发送'/>
+		</form>
+
+		<section id="nicknames" >
+			<b>当前在线人数：<span id="currpcount"></span></b>
+			<ul style="list-style-type:none;border:1px solid;width:150px;color:red;padding:5px;"></ul>
+		</section>
+
+		<section id="messages">
+
+		</section>
+
+
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" ></script>
+
+		<script src="/socket.io/socket.io.js"></script>
+		<script>
+			var socket = io.connect();
+
+			$(function() {
+
+				var nickname = $('#nickname');
+				var setNicknameForm = $('#set-nickname');
+				var nicknamesList = $('#nicknames ul');
+
+				var messageForm = $('#send-message');
+				var message = $('#message');
+				var messages = $('#messages');
+
+				setNicknameForm.submit(function(event){
+					
+					event.preventDefault();
+					socket.emit('nickname',nickname.val(),function(data){
+					
+						if(data){
+						
+							console.log('Nickname set successfully');
+							setNicknameForm.hide();
+							messageForm.show();
+
+						} else {
+
+							setNicknameForm.prepend('<p>Sorry - that nickname is already taken.</p>');
+						}
+					});
+
+				});
+
+				messageForm.submit(function(event){
+					event.preventDefault();
+					socket.emit('user message',message.val());
+					message.val('').focus();
+				});
+				
+
+				socket.on('nicknames',function(data){
+					var html = '';
+
+					for(var i = 0; i < data.length; i++){
+						html += "<li>* " + data[i] + '</li>';
+					}
+					$('#currpcount').html(data.length);
+					nicknamesList.empty().append(html);
+				});
+
+				socket.on('user message',function(data){
+					messages.append('<p><strong style="color:red;">' + data.nick + ':</strong>' + data.message + '</p>');
+				});
+				
+			});
+		</script>
+
+	</body>
+
+</html>
